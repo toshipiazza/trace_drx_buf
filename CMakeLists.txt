@@ -1,0 +1,10 @@
+cmake_minimum_required (VERSION 3.0)
+project (memtrace_simple)
+
+add_library(memtrace_simple SHARED memtrace_simple.c utils.c)
+find_package(DynamoRIO REQUIRED)
+configure_DynamoRIO_client(memtrace_simple)
+use_DynamoRIO_extension(memtrace_simple "drreg")
+use_DynamoRIO_extension(memtrace_simple "drmgr")
+use_DynamoRIO_extension(memtrace_simple "drutil")
+use_DynamoRIO_extension(memtrace_simple "drx")
