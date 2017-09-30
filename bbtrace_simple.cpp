@@ -37,7 +37,10 @@
 #include "drmgr.h"
 #include "drreg.h"
 #include "drx.h"
+#include "droption.h"
+
 #include "utils.h"
+#include "app.h"
 
 #define MAX_NUM_MEM_REFS 4096
 #define MEM_BUF_SIZE (sizeof(app_pc) * MAX_NUM_MEM_REFS)
@@ -60,7 +63,7 @@ bbtrace(void *drcontext, void *buf_base, size_t size)
     app_pc *bb;
     app_pc *bb_top = (app_pc *)((char *)buf_base + size);
 
-    data = drmgr_get_tls_field(drcontext, tls_idx);
+    data = (per_thread_t *)drmgr_get_tls_field(drcontext, tls_idx);
     /* We use libc's fprintf as it is buffered and much faster than dr_fprintf
      * for repeated printing that dominates performance, as the printing does here.
      */
@@ -77,6 +80,8 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
     app_pc pc;
 
     if (!drmgr_is_first_instr(drcontext, instr))
+        return DR_EMIT_DEFAULT;
+    if (app_should_ignore_tag(tag))
         return DR_EMIT_DEFAULT;
 
     drmgr_disable_auto_predication(drcontext, bb);
@@ -99,14 +104,14 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
         drreg_unreserve_register(drcontext, bb, instr, reg_tmp) != DRREG_SUCCESS)
         DR_ASSERT(false);
 
-    /* FIXME: disable traces, DR_EMIT_STORE_TRANSLATION */
+    /* FIXME: disable traces */
     return DR_EMIT_DEFAULT;
 }
 
 static void
 event_thread_init(void *drcontext)
 {
-    per_thread_t *data = dr_thread_alloc(drcontext, sizeof(per_thread_t));
+    per_thread_t *data = (per_thread_t *)dr_thread_alloc(drcontext, sizeof(per_thread_t));
     DR_ASSERT(data != NULL);
     drmgr_set_tls_field(drcontext, tls_idx, data);
 
@@ -127,7 +132,7 @@ event_thread_init(void *drcontext)
 static void
 event_thread_exit(void *drcontext)
 {
-    per_thread_t *data = drmgr_get_tls_field(drcontext, tls_idx);
+    per_thread_t *data = (per_thread_t *)drmgr_get_tls_field(drcontext, tls_idx);
     log_stream_close(data->logf); /* closes fd too */
     dr_thread_free(drcontext, data, sizeof(per_thread_t));
 }
@@ -153,6 +158,9 @@ dr_client_main(client_id_t id, int argc, const char *argv[])
 {
     /* We need 2 reg slots beyond drreg's eflags slots => 3 slots */
     drreg_options_t ops = {sizeof(ops), 3, false};
+    droption_parser_t::parse_argv(DROPTION_SCOPE_CLIENT, argc, argv, NULL, NULL);
+
+    app_init();
     if (!drmgr_init() || drreg_init(&ops) != DRREG_SUCCESS || !drx_init())
         DR_ASSERT(false);
 

@@ -1,3 +1,6 @@
+#ifndef UTILS_H_
+#define UTILS_H_
+
 /* ******************************************************************************
  * Copyright (c) 2013-2016 Google, Inc.  All rights reserved.
  * Copyright (c) 2011 Massachusetts Institute of Technology  All rights reserved.
@@ -34,6 +37,10 @@
 
 #include "dr_api.h" /* for file_t, client_id_t */
 #include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define BUFFER_SIZE_BYTES(buf)      sizeof(buf)
 #define BUFFER_SIZE_ELEMENTS(buf)   (BUFFER_SIZE_BYTES(buf) / sizeof((buf)[0]))
@@ -80,3 +87,9 @@ log_stream_from_file(file_t f);
  */
 void
 log_stream_close(FILE *f);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
