@@ -79,11 +79,6 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
     reg_id_t reg_ptr, reg_tmp;
     app_pc pc;
 
-    if (for_trace) {
-        dr_printf("WARNING: please specify -disable_traces or resulting "
-                  "trace may seem innacurate\n");
-    }
-
     if (!drmgr_is_first_instr(drcontext, instr))
         return DR_EMIT_DEFAULT;
     if (app_should_ignore_tag(tag))
